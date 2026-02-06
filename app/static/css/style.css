@@ -35,34 +35,34 @@ Organizei em seções para facilitar manutenção:
     --bg-secondary: #12121a;
     --bg-card: #1a1a24;
     --bg-card-hover: #22222e;
-    
+
     /* Cores de texto */
     --text-primary: #ffffff;
     --text-secondary: #a0a0b0;
     --text-muted: #666680;
-    
+
     /* Cores de destaque (neon) */
     --accent-blue: #00d4ff;
     --accent-green: #00ff88;
     --accent-orange: #ff8800;
     --accent-red: #ff4466;
     --accent-purple: #aa66ff;
-    
+
     /* Cores dos fabricantes */
     --cisco-color: #0066cc;
     --nokia-color: #ff6600;
     --fortinet-color: #ff3333;
     --huawei-color: #00cc66;
-    
+
     /* Bordas e sombras */
     --border-color: #2a2a3a;
     --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.1);
-    
+
     /* Tamanhos */
     --sidebar-width: 260px;
     --header-height: 70px;
     --border-radius: 12px;
-    
+
     /* Fontes */
     --font-main: 'Inter', -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', 'Consolas', monospace;
@@ -83,8 +83,7 @@ body {
 
 /* Container principal com grid */
 .app-container {
-    display: grid;
-    grid-template-columns: var(--sidebar-width) 1fr;
+    display: flex;
     min-height: 100vh;
 }
 
@@ -93,6 +92,8 @@ body {
     background: var(--bg-secondary);
     min-height: 100vh;
     overflow-y: auto;
+    flex: 1;
+    margin-left: var(--sidebar-width);
 }
 
 /* Header da página */
@@ -134,8 +135,15 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 /* Conteúdo da página */
@@ -312,7 +320,7 @@ body {
     margin-bottom: 40px;
 }
 
-.section > .section-title {
+.section>.section-title {
     font-size: 1.2rem;
     color: var(--text-primary);
     margin-bottom: 20px;
@@ -347,10 +355,21 @@ body {
     height: 3px;
 }
 
-.vendor-card.cisco::before { background: var(--cisco-color); }
-.vendor-card.nokia::before { background: var(--nokia-color); }
-.vendor-card.fortigate::before { background: var(--fortinet-color); }
-.vendor-card.huawei::before { background: var(--huawei-color); }
+.vendor-card.cisco::before {
+    background: var(--cisco-color);
+}
+
+.vendor-card.nokia::before {
+    background: var(--nokia-color);
+}
+
+.vendor-card.fortigate::before {
+    background: var(--fortinet-color);
+}
+
+.vendor-card.huawei::before {
+    background: var(--huawei-color);
+}
 
 .vendor-card:hover {
     transform: translateY(-5px);
@@ -513,14 +532,16 @@ select:disabled {
     display: inline-block;
     width: 18px;
     height: 18px;
-    border: 2px solid rgba(255,255,255,0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
     border-top-color: white;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Divider */
@@ -692,7 +713,9 @@ pre {
     line-height: 1.8;
 }
 
-.diag-ia h2, .diag-ia h3, .diag-ia h4 {
+.diag-ia h2,
+.diag-ia h3,
+.diag-ia h4 {
     color: var(--accent-blue);
     margin: 20px 0 10px 0;
 }
@@ -706,9 +729,17 @@ pre {
     color: var(--text-primary);
 }
 
-.icon-warning { color: var(--accent-orange); }
-.icon-success { color: var(--accent-green); }
-.icon-error { color: var(--accent-red); }
+.icon-warning {
+    color: var(--accent-orange);
+}
+
+.icon-success {
+    color: var(--accent-green);
+}
+
+.icon-error {
+    color: var(--accent-red);
+}
 
 /* ========================================
    7. CHAT
@@ -975,6 +1006,7 @@ pre {
 }
 
 @media (min-width: 1200px) {
+
     .troubleshoot-container,
     .scripts-container {
         grid-template-columns: 1fr 1fr;
@@ -989,11 +1021,11 @@ pre {
     .app-container {
         grid-template-columns: 1fr;
     }
-    
+
     .sidebar {
         display: none;
     }
-    
+
     .charts-grid {
         grid-template-columns: 1fr;
     }
@@ -1003,19 +1035,19 @@ pre {
     .page-content {
         padding: 20px;
     }
-    
+
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .vendors-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .quick-actions {
         flex-direction: column;
     }
-    
+
     .chat-container {
         width: 100%;
         right: -25px;

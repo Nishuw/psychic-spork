@@ -62,8 +62,8 @@ class Config:
     GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', '')
     
     # Modelo do Gemini a ser usado
-    # gemini-pro é bom para texto, gemini-pro-vision para imagens
-    GEMINI_MODEL = 'gemini-pro'
+    # gemini-1.5-flash é rápido e eficiente, gemini-1.5-pro é mais poderoso
+    GEMINI_MODEL = 'gemini-1.5-flash'
     
     # ========================================
     # Fabricantes e Versões Suportadas

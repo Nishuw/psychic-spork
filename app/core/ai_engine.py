@@ -11,16 +11,13 @@ Aqui fazemos a integração com o Google Gemini para:
 - Gerar explicações sobre comandos e configurações
 - Responder perguntas sobre troubleshooting
 
-Por que usar Google Gemini?
-- É uma IA muito poderosa e atualizada
-- Tem excelente compreensão de contexto técnico
-- A API é simples de usar
-- Suporta conversas longas com histórico
+ATUALIZADO: Agora usa a nova biblioteca google-genai
+(a antiga google.generativeai foi descontinuada)
 ========================================
 """
 
-import os
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from typing import Optional, List, Dict
 
 # Importa as configurações do sistema
@@ -39,8 +36,8 @@ class AIEngine:
     
     Atributos:
     ----------
-    model : GenerativeModel
-        Instância do modelo Gemini configurado
+    client : genai.Client
+        Cliente da API Gemini
     
     chat_history : List[Dict]
         Histórico da conversa atual (para contexto)
@@ -70,11 +67,11 @@ class AIEngine:
         self.api_key = Config.GOOGLE_API_KEY
         
         # Inicializa como None - será configurado se tiver API key
-        self.model = None
-        self.chat = None
+        self.client = None
+        self.model_name = Config.GEMINI_MODEL
         
         # Histórico de mensagens para manter contexto
-        self.chat_history: List[Dict] = []
+        self.chat_history: List[types.Content] = []
         
         # Prompt do sistema - define a "personalidade" da IA
         # Isso é MUITO importante para a qualidade das respostas
@@ -93,65 +90,17 @@ class AIEngine:
         Configura a conexão com a API do Google Gemini.
         
         Este método é chamado no __init__ se tivermos API key.
-        Configura o modelo e as opções de geração de texto.
+        Usa a nova biblioteca google-genai.
         """
         try:
-            # Configura a biblioteca com nossa API key
-            genai.configure(api_key=self.api_key)
-            
-            # Configurações de geração - controla como a IA responde
-            generation_config = {
-                # Temperatura: 0 = mais preciso, 1 = mais criativo
-                # Para troubleshooting, queremos precisão!
-                "temperature": 0.3,
-                
-                # Top P: diversidade das respostas
-                "top_p": 0.8,
-                
-                # Top K: quantas palavras considerar
-                "top_k": 40,
-                
-                # Máximo de tokens na resposta
-                "max_output_tokens": 2048,
-            }
-            
-            # Configurações de segurança - relaxamos um pouco
-            # porque estamos falando de termos técnicos que podem
-            # ser mal interpretados (como "kill process", "terminate", etc)
-            safety_settings = [
-                {
-                    "category": "HARM_CATEGORY_HARASSMENT",
-                    "threshold": "BLOCK_ONLY_HIGH"
-                },
-                {
-                    "category": "HARM_CATEGORY_HATE_SPEECH",
-                    "threshold": "BLOCK_ONLY_HIGH"
-                },
-                {
-                    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                    "threshold": "BLOCK_ONLY_HIGH"
-                },
-                {
-                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-                    "threshold": "BLOCK_ONLY_HIGH"
-                }
-            ]
-            
-            # Cria o modelo com as configurações
-            self.model = genai.GenerativeModel(
-                model_name=Config.GEMINI_MODEL,
-                generation_config=generation_config,
-                safety_settings=safety_settings
-            )
-            
-            # Inicia uma sessão de chat para manter contexto
-            self.chat = self.model.start_chat(history=[])
+            # Cria o cliente da API com a chave
+            self.client = genai.Client(api_key=self.api_key)
             
             print("✅ Engine de IA configurada com sucesso!")
             
         except Exception as e:
             print(f"❌ Erro ao configurar Gemini: {str(e)}")
-            self.model = None
+            self.client = None
     
     def _criar_system_prompt(self) -> str:
         """
@@ -249,8 +198,8 @@ IMPORTANTE:
         ...     versao="ios-xe-17"
         ... )
         """
-        # Se não temos modelo configurado, retorna erro amigável
-        if not self.model:
+        # Se não temos cliente configurado, retorna erro amigável
+        if not self.client:
             return {
                 "sucesso": False,
                 "analise": "",
@@ -268,22 +217,28 @@ IMPORTANTE:
             )
             
             # Envia para a IA e aguarda resposta
-            # Usamos o chat para manter contexto entre mensagens
-            resposta = self.chat.send_message(prompt)
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.3,
+                    top_p=0.8,
+                    top_k=40,
+                    max_output_tokens=2048,
+                )
+            )
             
             # Adiciona ao histórico local
-            self.chat_history.append({
-                "role": "user",
-                "content": descricao_problema
-            })
-            self.chat_history.append({
-                "role": "assistant",
-                "content": resposta.text
-            })
+            self.chat_history.append(
+                types.Content(role="user", parts=[types.Part(text=descricao_problema)])
+            )
+            self.chat_history.append(
+                types.Content(role="model", parts=[types.Part(text=response.text)])
+            )
             
             return {
                 "sucesso": True,
-                "analise": resposta.text,
+                "analise": response.text,
                 "erro": ""
             }
             
@@ -385,7 +340,7 @@ Por favor, analise o problema acima e forneça:
             - explicacao: str (o que cada parte faz)
             - erro: str (se houver)
         """
-        if not self.model:
+        if not self.client:
             return {
                 "sucesso": False,
                 "script": "",
@@ -418,11 +373,18 @@ Por favor, gere:
 Formate o script em bloco de código apropriado.
 """
             
-            resposta = self.chat.send_message(prompt)
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.3,
+                    max_output_tokens=2048,
+                )
+            )
             
             return {
                 "sucesso": True,
-                "script": resposta.text,
+                "script": response.text,
                 "explicacao": "",  # Já está incluída na resposta
                 "erro": ""
             }
@@ -454,7 +416,7 @@ Formate o script em bloco de código apropriado.
             - resposta: str
             - erro: str
         """
-        if not self.model:
+        if not self.client:
             return {
                 "sucesso": False,
                 "resposta": "",
@@ -468,15 +430,26 @@ Formate o script em bloco de código apropriado.
             else:
                 mensagem_completa = mensagem
             
-            resposta = self.chat.send_message(mensagem_completa)
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=mensagem_completa,
+                config=types.GenerateContentConfig(
+                    temperature=0.5,
+                    max_output_tokens=2048,
+                )
+            )
             
             # Atualiza histórico
-            self.chat_history.append({"role": "user", "content": mensagem})
-            self.chat_history.append({"role": "assistant", "content": resposta.text})
+            self.chat_history.append(
+                types.Content(role="user", parts=[types.Part(text=mensagem)])
+            )
+            self.chat_history.append(
+                types.Content(role="model", parts=[types.Part(text=response.text)])
+            )
             
             return {
                 "sucesso": True,
-                "resposta": resposta.text,
+                "resposta": response.text,
                 "erro": ""
             }
             
@@ -495,11 +468,6 @@ Formate o script em bloco de código apropriado.
         sem o contexto da conversa anterior.
         """
         self.chat_history = []
-        
-        # Reinicia a sessão de chat também
-        if self.model:
-            self.chat = self.model.start_chat(history=[])
-        
         print("🧹 Histórico de conversa limpo!")
     
     def obter_historico(self) -> List[Dict]:
@@ -511,4 +479,11 @@ Formate o script em bloco de código apropriado.
         List[Dict]
             Lista de mensagens com role e content
         """
-        return self.chat_history.copy()
+        # Converte para formato simples para serialização
+        resultado = []
+        for msg in self.chat_history:
+            resultado.append({
+                "role": msg.role,
+                "content": msg.parts[0].text if msg.parts else ""
+            })
+        return resultado
