@@ -63,7 +63,7 @@ class Config:
     
     # Modelo do Gemini a ser usado
     # Nova biblioteca google-genai não usa prefixo models/
-    GEMINI_MODEL = 'gemini-1.5-flash'
+    GEMINI_MODEL = 'gemini-2.0-flash'
     
     # ========================================
     # Fabricantes e Versões Suportadas

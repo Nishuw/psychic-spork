@@ -17,9 +17,27 @@
       "categoria": "roteamento",
       "fonte": "",
       "sucesso": false
+    },
+    {
+      "timestamp": "2026-02-06T12:39:38.691903",
+      "problema": "bgp off",
+      "fabricante": "cisco",
+      "versao": "ios-15",
+      "categoria": "roteamento",
+      "fonte": "",
+      "sucesso": false
+    },
+    {
+      "timestamp": "2026-02-06T12:39:47.116178",
+      "problema": "bgp off",
+      "fabricante": "cisco",
+      "versao": "ios-15",
+      "categoria": "roteamento",
+      "fonte": "",
+      "sucesso": false
     }
   ],
   "scripts_gerados": 0,
   "consultas_ia": 0,
-  "atualizado_em": "2026-02-06T12:38:19.462858"
+  "atualizado_em": "2026-02-06T12:39:47.963786"
 }
