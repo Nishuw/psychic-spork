@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+<!--
+========================================
+NetRouter AI - Página de Troubleshooting
+========================================
+Interface para diagnóstico de problemas de rede.
+O usuário descreve o problema e recebe análise.
+========================================
+-->
+
+{% block content %}
+<div class="troubleshoot-container">
+    <!-- Formulário de Diagnóstico -->
+    <div class="card card-form">
+        <h2 class="card-title">🔧 Descreva o Problema</h2>
+
+        <form id="formDiagnostico" onsubmit="realizarDiagnostico(event)">
+            <!-- Seleção de Fabricante -->
+            <div class="form-group">
+                <label for="fabricante">Fabricante</label>
+                <select id="fabricante" onchange="atualizarVersoes()">
+                    <option value="">-- Selecione --</option>
+                    {% for fab_id, fab in fabricantes.items() %}
+                    <option value="{{ fab_id }}">{{ fab.icone }} {{ fab.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Seleção de Versão -->
+            <div class="form-group">
+                <label for="versao">Versão do Sistema</label>
+                <select id="versao" disabled>
+                    <option value="">-- Selecione o fabricante primeiro --</option>
+                </select>
+            </div>
+
+            <!-- Categoria do Problema -->
+            <div class="form-group">
+                <label for="categoria">Categoria (opcional)</label>
+                <select id="categoria">
+                    <option value="">-- Qualquer --</option>
+                    {% for cat in categorias %}
+                    <option value="{{ cat }}">{{ cat|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Descrição do Problema -->
+            <div class="form-group">
+                <label for="problema">Descrição do Problema *</label>
+                <textarea id="problema" rows="4" required
+                    placeholder="Ex: BGP session não estabelece com o peer 192.168.1.1"></textarea>
+            </div>
+
+            <!-- Logs Relevantes -->
+            <div class="form-group">
+                <label for="logs">Logs ou Output de Comandos (opcional)</label>
+                <textarea id="logs" rows="4" class="code-textarea"
+                    placeholder="Cole aqui logs ou output de comandos relevantes..."></textarea>
+            </div>
+
+            <!-- Botão de Submit -->
+            <button type="submit" class="btn btn-primary btn-block" id="btnDiagnosticar">
+                <span class="btn-icon">🔍</span>
+                <span class="btn-text">Diagnosticar</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Área de Resultado -->
+    <div class="card card-resultado" id="areaResultado" style="display: none;">
+        <h2 class="card-title">📋 Resultado do Diagnóstico</h2>
+
+        <!-- Indicador de fonte (Local ou IA) -->
+        <div class="resultado-fonte" id="resultadoFonte"></div>
+
+        <!-- Conteúdo do diagnóstico -->
+        <div class="resultado-conteudo" id="resultadoConteudo"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Dados dos fabricantes carregados do servidor
+    const fabricantes = {{ fabricantes| tojson }};
+
+    // Atualiza o dropdown de versões quando muda o fabricante
+    function atualizarVersoes() {
+        const fabSelect = document.getElementById('fabricante');
+        const verSelect = document.getElementById('versao');
+        const fabId = fabSelect.value;
+
+        // Limpa opções anteriores
+        verSelect.innerHTML = '';
+
+        if (!fabId) {
+            verSelect.innerHTML = '<option value="">-- Selecione o fabricante primeiro --</option>';
+            verSelect.disabled = true;
+            return;
+        }
+
+        // Adiciona versões do fabricante selecionado
+        const fab = fabricantes[fabId];
+        verSelect.disabled = false;
+        verSelect.innerHTML = '<option value="">-- Selecione a versão --</option>';
+
+        for (const [verId, verInfo] of Object.entries(fab.versoes)) {
+            const option = document.createElement('option');
+            option.value = verId;
+            option.textContent = verInfo.nome + ' - ' + verInfo.descricao;
+            verSelect.appendChild(option);
+        }
+    }
+
+    // Realiza o diagnóstico chamando a API
+    function realizarDiagnostico(event) {
+        event.preventDefault();
+
+        const btn = document.getElementById('btnDiagnosticar');
+        const areaResultado = document.getElementById('areaResultado');
+        const resultadoFonte = document.getElementById('resultadoFonte');
+        const resultadoConteudo = document.getElementById('resultadoConteudo');
+
+        // Coleta dados do formulário
+        const dados = {
+            problema: document.getElementById('problema').value,
+            fabricante: document.getElementById('fabricante').value,
+            versao: document.getElementById('versao').value,
+            categoria: document.getElementById('categoria').value,
+            logs: document.getElementById('logs').value
+        };
+
+        // Validação básica
+        if (!dados.problema.trim()) {
+            alert('Por favor, descreva o problema.');
+            return;
+        }
+
+        // Mostra loading
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Analisando...';
+        areaResultado.style.display = 'none';
+
+        // Chama a API
+        fetch('/api/diagnosticar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dados)
+        })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="btn-icon">🔍</span><span class="btn-text">Diagnosticar</span>';
+
+                if (data.sucesso) {
+                    // Mostra resultado
+                    areaResultado.style.display = 'block';
+
+                    // Indica a fonte (base local ou IA)
+                    if (data.fonte === 'local') {
+                        resultadoFonte.innerHTML = '<span class="badge badge-local">📚 Base de Conhecimento Local</span>';
+                        resultadoConteudo.innerHTML = formatarResultadoLocal(data.diagnostico);
+                    } else if (data.fonte === 'ia') {
+                        resultadoFonte.innerHTML = '<span class="badge badge-ia">🤖 Análise por IA</span>';
+                        resultadoConteudo.innerHTML = formatarResultadoIA(data.diagnostico.analise_ia);
+                    }
+
+                    // Scroll suave até o resultado
+                    areaResultado.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert('Erro: ' + data.erro);
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="btn-icon">🔍</span><span class="btn-text">Diagnosticar</span>';
+                alert('Erro ao conectar com o servidor: ' + err.message);
+            });
+    }
+
+    // Formata resultado da base local
+    function formatarResultadoLocal(diag) {
+        let html = `
+        <div class="diag-section">
+            <h3>📌 Problema Identificado</h3>
+            <p class="diag-problema">${diag.categoria} - ${diag.problema_identificado}</p>
+        </div>
+        
+        <div class="diag-section">
+            <h3>❓ Possíveis Causas</h3>
+            <ul class="diag-lista">
+                ${diag.causas.map(c => `<li>${c}</li>`).join('')}
+            </ul>
+        </div>
+        
+        <div class="diag-section">
+            <h3>💻 Comandos de Diagnóstico</h3>
+            <pre class="code-block">${diag.comandos.join('\n')}</pre>
+        </div>
+        
+        <div class="diag-section">
+            <h3>✅ Soluções Sugeridas</h3>
+            <ul class="diag-lista">
+                ${diag.solucoes.map(s => `<li>${s}</li>`).join('')}
+            </ul>
+        </div>
+    `;
+        return html;
+    }
+
+    // Formata resultado da IA (já vem em markdown)
+    function formatarResultadoIA(analise) {
+        // Converte markdown básico para HTML
+        let html = analise
+            .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre class="code-block">$2</pre>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/^### (.*$)/gim, '<h4>$1</h4>')
+            .replace(/^## (.*$)/gim, '<h3>$1</h3>')
+            .replace(/^# (.*$)/gim, '<h2>$1</h2>')
+            .replace(/^\- (.*$)/gim, '<li>$1</li>')
+            .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+            .replace(/\n\n/g, '</p><p>')
+            .replace(/⚠️/g, '<span class="icon-warning">⚠️</span>')
+            .replace(/✅/g, '<span class="icon-success">✅</span>')
+            .replace(/❌/g, '<span class="icon-error">❌</span>');
+
+        return `<div class="diag-ia">${html}</div>`;
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+<!--
+========================================
+NetRouter AI - Chat com IA
+========================================
+Página de chat para conversa livre com a IA.
+========================================
+-->
+
+{% block content %}
+<div class="chat-page-container">
+    <div class="chat-main-card">
+        <div class="chat-info">
+            <h2>🤖 Assistente de Redes</h2>
+            <p>Converse com a IA sobre configuração de roteadores, troubleshooting,
+                melhores práticas e dúvidas sobre Cisco, Nokia, FortiGate e Huawei.</p>
+        </div>
+
+        <!-- Área de Mensagens -->
+        <div class="chat-messages-full" id="chatMessagesFull">
+            <div class="message assistant">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <p>Olá! Sou o assistente especializado em redes. Posso ajudar com:</p>
+                    <ul>
+                        <li>Troubleshooting de problemas</li>
+                        <li>Explicação de comandos</li>
+                        <li>Melhores práticas de configuração</li>
+                        <li>Dúvidas sobre protocolos (BGP, OSPF, etc)</li>
+                    </ul>
+                    <p>Como posso ajudar hoje?</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input de Mensagem -->
+        <div class="chat-input-full">
+            <textarea id="chatInputFull" rows="2" placeholder="Digite sua pergunta sobre redes..."
+                onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();enviarMensagemFull()}"></textarea>
+            <button onclick="enviarMensagemFull()" class="btn btn-primary" id="btnEnviar">
+                <span>Enviar</span>
+            </button>
+        </div>
+
+        <button onclick="limparChat()" class="btn btn-small btn-secondary">
+            🗑️ Limpar Conversa
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function enviarMensagemFull() {
+        const input = document.getElementById('chatInputFull');
+        const mensagem = input.value.trim();
+        const btn = document.getElementById('btnEnviar');
+
+        if (!mensagem) return;
+
+        // Adiciona mensagem do usuário
+        adicionarMensagemFull('user', mensagem);
+        input.value = '';
+        btn.disabled = true;
+
+        // Mostra indicador de digitação
+        adicionarMensagemFull('assistant', '<span class="typing">Pensando...</span>');
+
+        // Chama a API
+        fetch('/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mensagem: mensagem })
+        })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                // Remove indicador de digitação
+                const msgs = document.getElementById('chatMessagesFull');
+                msgs.removeChild(msgs.lastChild);
+
+                if (data.sucesso) {
+                    adicionarMensagemFull('assistant', data.resposta);
+                } else {
+                    adicionarMensagemFull('assistant', '❌ Erro: ' + data.erro);
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                const msgs = document.getElementById('chatMessagesFull');
+                msgs.removeChild(msgs.lastChild);
+                adicionarMensagemFull('assistant', '❌ Erro de conexão com o servidor.');
+            });
+    }
+
+    function adicionarMensagemFull(role, conteudo) {
+        const container = document.getElementById('chatMessagesFull');
+        const div = document.createElement('div');
+        div.className = 'message ' + role;
+
+        const avatar = role === 'user' ? '👤' : '🤖';
+
+        // Converte markdown básico
+        let html = conteudo
+            .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre>$2</pre>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/\n/g, '<br>');
+
+        div.innerHTML = `
+        <div class="message-avatar">${avatar}</div>
+        <div class="message-content">${html}</div>
+    `;
+
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function limparChat() {
+        if (!confirm('Limpar toda a conversa?')) return;
+
+        fetch('/ai/limpar', { method: 'POST' })
+            .then(() => {
+                const container = document.getElementById('chatMessagesFull');
+                container.innerHTML = `
+                <div class="message assistant">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <p>Conversa limpa! Como posso ajudar?</p>
+                    </div>
+                </div>
+            `;
+            });
+    }
+</script>
+{% endblock %}

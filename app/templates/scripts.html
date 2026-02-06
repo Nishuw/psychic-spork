@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+<!--
+========================================
+NetRouter AI - Gerador de Scripts
+========================================
+Interface para gerar e baixar scripts de configuração.
+========================================
+-->
+
+{% block content %}
+<div class="scripts-container">
+    <!-- Painel de Seleção -->
+    <div class="card card-form">
+        <h2 class="card-title">📝 Gerador de Scripts</h2>
+
+        <!-- Seleção de Fabricante -->
+        <div class="form-group">
+            <label for="fabricante">Fabricante</label>
+            <select id="fabricante" onchange="atualizarVersoes()">
+                <option value="">-- Selecione --</option>
+                {% for fab_id, fab in fabricantes.items() %}
+                <option value="{{ fab_id }}">{{ fab.icone }} {{ fab.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Seleção de Versão -->
+        <div class="form-group">
+            <label for="versao">Versão</label>
+            <select id="versao" disabled onchange="carregarTemplates()">
+                <option value="">-- Selecione o fabricante primeiro --</option>
+            </select>
+        </div>
+
+        <!-- Templates Disponíveis -->
+        <div class="form-group" id="grupoTemplates" style="display: none;">
+            <label>Templates Disponíveis</label>
+            <div class="templates-grid" id="listaTemplates"></div>
+        </div>
+
+        <!-- Ou gerar via IA -->
+        <div class="divider"><span>ou</span></div>
+
+        <div class="form-group">
+            <label for="descricaoScript">Gerar Script Customizado com IA</label>
+            <textarea id="descricaoScript" rows="3"
+                placeholder="Descreva o que o script deve fazer. Ex: Configurar VPN site-to-site com o peer 10.0.0.1"></textarea>
+        </div>
+
+        <button type="button" class="btn btn-primary btn-block" onclick="gerarScriptIA()" id="btnGerarIA">
+            <span class="btn-icon">🤖</span>
+            <span class="btn-text">Gerar com IA</span>
+        </button>
+    </div>
+
+    <!-- Área do Script Gerado -->
+    <div class="card card-resultado" id="areaScript" style="display: none;">
+        <div class="script-header">
+            <h2 class="card-title">📄 Script Gerado</h2>
+            <div class="script-actions">
+                <button onclick="copiarScript()" class="btn btn-small">📋 Copiar</button>
+                <button onclick="baixarScript()" class="btn btn-small">💾 Baixar</button>
+            </div>
+        </div>
+
+        <pre class="script-content" id="scriptConteudo"></pre>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const fabricantes = {{ fabricantes| tojson }};
+
+    function atualizarVersoes() {
+        const fabSelect = document.getElementById('fabricante');
+        const verSelect = document.getElementById('versao');
+        const fabId = fabSelect.value;
+
+        verSelect.innerHTML = '';
+        document.getElementById('grupoTemplates').style.display = 'none';
+
+        if (!fabId) {
+            verSelect.innerHTML = '<option value="">-- Selecione o fabricante primeiro --</option>';
+            verSelect.disabled = true;
+            return;
+        }
+
+        const fab = fabricantes[fabId];
+        verSelect.disabled = false;
+        verSelect.innerHTML = '<option value="">-- Selecione a versão --</option>';
+
+        for (const [verId, verInfo] of Object.entries(fab.versoes)) {
+            const option = document.createElement('option');
+            option.value = verId;
+            option.textContent = verInfo.nome;
+            verSelect.appendChild(option);
+        }
+    }
+
+    function carregarTemplates() {
+        const fab = document.getElementById('fabricante').value;
+        const ver = document.getElementById('versao').value;
+        const grupoTemplates = document.getElementById('grupoTemplates');
+        const listaTemplates = document.getElementById('listaTemplates');
+
+        if (!fab || !ver) {
+            grupoTemplates.style.display = 'none';
+            return;
+        }
+
+        fetch(`/api/templates/${fab}?versao=${ver}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.sucesso && data.templates.length > 0) {
+                    grupoTemplates.style.display = 'block';
+                    listaTemplates.innerHTML = data.templates.map(t => `
+                    <div class="template-card" onclick="selecionarTemplate('${t.id}')">
+                        <h4>${t.nome}</h4>
+                        <p>${t.descricao}</p>
+                    </div>
+                `).join('');
+                } else {
+                    grupoTemplates.style.display = 'none';
+                }
+            });
+    }
+
+    function selecionarTemplate(templateId) {
+        const fab = document.getElementById('fabricante').value;
+
+        fetch(`/api/template/${fab}/${templateId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.sucesso) {
+                    mostrarScript(data.template.script);
+                }
+            });
+    }
+
+    function gerarScriptIA() {
+        const fab = document.getElementById('fabricante').value;
+        const ver = document.getElementById('versao').value;
+        const desc = document.getElementById('descricaoScript').value;
+        const btn = document.getElementById('btnGerarIA');
+
+        if (!desc.trim()) {
+            alert('Por favor, descreva o que o script deve fazer.');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Gerando...';
+
+        fetch('/api/gerar-script', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ descricao: desc, fabricante: fab, versao: ver })
+        })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="btn-icon">🤖</span><span class="btn-text">Gerar com IA</span>';
+
+                if (data.sucesso) {
+                    mostrarScript(data.script);
+                } else {
+                    alert('Erro: ' + data.erro);
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="btn-icon">🤖</span><span class="btn-text">Gerar com IA</span>';
+                alert('Erro de conexão');
+            });
+    }
+
+    function mostrarScript(conteudo) {
+        document.getElementById('areaScript').style.display = 'block';
+        document.getElementById('scriptConteudo').textContent = conteudo;
+        document.getElementById('areaScript').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function copiarScript() {
+        const script = document.getElementById('scriptConteudo').textContent;
+        navigator.clipboard.writeText(script).then(() => {
+            alert('Script copiado!');
+        });
+    }
+
+    function baixarScript() {
+        const script = document.getElementById('scriptConteudo').textContent;
+        const blob = new Blob([script], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'script_netrouter.txt';
+        a.click();
+    }
+</script>
+{% endblock %}

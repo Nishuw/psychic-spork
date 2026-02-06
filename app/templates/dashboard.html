@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+<!--
+========================================
+NetRouter AI - Página do Dashboard
+========================================
+Esta é a página inicial com visão geral do sistema.
+Mostra estatísticas, cards de fabricantes e atividade.
+========================================
+-->
+
+{% block content %}
+<!-- Grid de cards de estatísticas -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">🔍</div>
+        <div class="stat-info">
+            <span class="stat-value" id="totalDiagnosticos">0</span>
+            <span class="stat-label">Diagnósticos</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-info">
+            <span class="stat-value" id="taxaSucesso">0%</span>
+            <span class="stat-label">Taxa de Sucesso</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">📝</div>
+        <div class="stat-info">
+            <span class="stat-value" id="scriptsGerados">0</span>
+            <span class="stat-label">Scripts Gerados</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">🤖</div>
+        <div class="stat-info">
+            <span class="stat-value" id="consultasIA">0</span>
+            <span class="stat-label">Consultas IA</span>
+        </div>
+    </div>
+</div>
+
+<!-- Seção de Cards de Fabricantes -->
+<section class="section">
+    <h2 class="section-title">Fabricantes Suportados</h2>
+    <div class="vendors-grid">
+        {% for fab_id, fab in fabricantes.items() %}
+        <div class="vendor-card {{ fab_id }}">
+            <div class="vendor-icon">{{ fab.icone }}</div>
+            <h3 class="vendor-name">{{ fab.nome }}</h3>
+            <div class="vendor-versions">
+                {% for ver_id, ver in fab.versoes.items() %}
+                <span class="version-tag">{{ ver.nome }}</span>
+                {% endfor %}
+            </div>
+            <a href="{{ url_for('main.troubleshoot') }}?fabricante={{ fab_id }}" class="vendor-link">
+                Iniciar Troubleshoot →
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Seção de Gráficos -->
+<section class="section">
+    <h2 class="section-title">Estatísticas de Uso</h2>
+    <div class="charts-grid">
+        <div class="chart-card">
+            <h3>Diagnósticos por Fabricante</h3>
+            <canvas id="chartFabricantes"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h3>Categorias de Problemas</h3>
+            <canvas id="chartCategorias"></canvas>
+        </div>
+    </div>
+</section>
+
+<!-- Ações Rápidas -->
+<section class="section">
+    <h2 class="section-title">Ações Rápidas</h2>
+    <div class="quick-actions">
+        <a href="{{ url_for('main.troubleshoot') }}" class="action-btn primary">
+            <span class="action-icon">🔧</span>
+            <span class="action-text">Novo Diagnóstico</span>
+        </a>
+
+        <a href="{{ url_for('main.scripts') }}" class="action-btn secondary">
+            <span class="action-icon">📝</span>
+            <span class="action-text">Gerar Script</span>
+        </a>
+
+        <a href="{{ url_for('main.chat') }}" class="action-btn tertiary">
+            <span class="action-icon">🤖</span>
+            <span class="action-text">Perguntar à IA</span>
+        </a>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Carrega estatísticas ao iniciar a página
+    document.addEventListener('DOMContentLoaded', function () {
+        carregarEstatisticas();
+        inicializarGraficos();
+    });
+
+    // Busca estatísticas da API
+    function carregarEstatisticas() {
+        fetch('/api/estatisticas')
+            .then(res => res.json())
+            .then(data => {
+                if (data.sucesso) {
+                    const stats = data.estatisticas;
+                    document.getElementById('totalDiagnosticos').textContent = stats.total || 0;
+                    document.getElementById('taxaSucesso').textContent = (stats.taxa_sucesso || 0) + '%';
+                }
+            })
+            .catch(err => console.log('Estatísticas: servidor ainda iniciando...'));
+    }
+
+    // Inicializa gráficos com Chart.js
+    function inicializarGraficos() {
+        // Gráfico de fabricantes (pizza)
+        const ctxFab = document.getElementById('chartFabricantes');
+        if (ctxFab) {
+            new Chart(ctxFab, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Cisco', 'Nokia', 'FortiGate', 'Huawei'],
+                    datasets: [{
+                        data: [40, 25, 20, 15],
+                        backgroundColor: ['#0066cc', '#ff6600', '#ff3333', '#00cc66'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#e0e0e0' } }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de categorias (barras)
+        const ctxCat = document.getElementById('chartCategorias');
+        if (ctxCat) {
+            new Chart(ctxCat, {
+                type: 'bar',
+                data: {
+                    labels: ['Conectividade', 'Roteamento', 'Performance', 'Segurança', 'Interface'],
+                    datasets: [{
+                        label: 'Problemas',
+                        data: [45, 30, 25, 20, 15],
+                        backgroundColor: '#00d4ff',
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#2a2a2a' }, ticks: { color: '#888' } },
+                        x: { grid: { display: false }, ticks: { color: '#888' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}
