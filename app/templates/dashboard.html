@@ -105,38 +105,71 @@ Mostra estatísticas, cards de fabricantes e atividade.
 
 {% block scripts %}
 <script>
+    // Variáveis globais para gráficos
+    let chartFab = null;
+    let chartCat = null;
+
     // Carrega estatísticas ao iniciar a página
     document.addEventListener('DOMContentLoaded', function () {
         carregarEstatisticas();
-        inicializarGraficos();
     });
 
-    // Busca estatísticas da API
+    // Busca estatísticas da API e atualiza dashboard
     function carregarEstatisticas() {
         fetch('/api/estatisticas')
             .then(res => res.json())
             .then(data => {
                 if (data.sucesso) {
                     const stats = data.estatisticas;
+
+                    // Atualiza cards de estatísticas
                     document.getElementById('totalDiagnosticos').textContent = stats.total || 0;
                     document.getElementById('taxaSucesso').textContent = (stats.taxa_sucesso || 0) + '%';
+                    document.getElementById('scriptsGerados').textContent = stats.scripts_gerados || 0;
+                    document.getElementById('consultasIA').textContent = stats.consultas_ia || 0;
+
+                    // Inicializa gráficos com dados reais
+                    inicializarGraficos(stats);
                 }
             })
-            .catch(err => console.log('Estatísticas: servidor ainda iniciando...'));
+            .catch(err => {
+                console.log('Estatísticas: aguardando servidor...', err);
+                // Inicializa gráficos vazios se API falhar
+                inicializarGraficos({});
+            });
     }
 
-    // Inicializa gráficos com Chart.js
-    function inicializarGraficos() {
+    // Inicializa gráficos com dados reais
+    function inicializarGraficos(stats) {
+        // Dados de fabricantes
+        const porFab = stats.por_fabricante || {};
+        const fabLabels = Object.keys(porFab).length > 0
+            ? Object.keys(porFab).map(f => f.charAt(0).toUpperCase() + f.slice(1))
+            : ['Cisco', 'Nokia', 'FortiGate', 'Huawei'];
+        const fabData = Object.keys(porFab).length > 0
+            ? Object.values(porFab)
+            : [0, 0, 0, 0];
+
+        const fabColors = {
+            'cisco': '#0066cc',
+            'nokia': '#ff6600',
+            'fortigate': '#ff3333',
+            'huawei': '#00cc66',
+            'generico': '#888888'
+        };
+        const fabBgColors = fabLabels.map(f => fabColors[f.toLowerCase()] || '#00d4ff');
+
         // Gráfico de fabricantes (pizza)
         const ctxFab = document.getElementById('chartFabricantes');
         if (ctxFab) {
-            new Chart(ctxFab, {
+            if (chartFab) chartFab.destroy();
+            chartFab = new Chart(ctxFab, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Cisco', 'Nokia', 'FortiGate', 'Huawei'],
+                    labels: fabLabels,
                     datasets: [{
-                        data: [40, 25, 20, 15],
-                        backgroundColor: ['#0066cc', '#ff6600', '#ff3333', '#00cc66'],
+                        data: fabData.length > 0 && fabData.some(v => v > 0) ? fabData : [1, 1, 1, 1],
+                        backgroundColor: fabBgColors,
                         borderWidth: 0
                     }]
                 },
@@ -149,16 +182,26 @@ Mostra estatísticas, cards de fabricantes e atividade.
             });
         }
 
+        // Dados de categorias
+        const porCat = stats.por_categoria || {};
+        const catLabels = Object.keys(porCat).length > 0
+            ? Object.keys(porCat).map(c => c.charAt(0).toUpperCase() + c.slice(1))
+            : ['Conectividade', 'Roteamento', 'Performance', 'Segurança'];
+        const catData = Object.keys(porCat).length > 0
+            ? Object.values(porCat)
+            : [0, 0, 0, 0];
+
         // Gráfico de categorias (barras)
         const ctxCat = document.getElementById('chartCategorias');
         if (ctxCat) {
-            new Chart(ctxCat, {
+            if (chartCat) chartCat.destroy();
+            chartCat = new Chart(ctxCat, {
                 type: 'bar',
                 data: {
-                    labels: ['Conectividade', 'Roteamento', 'Performance', 'Segurança', 'Interface'],
+                    labels: catLabels,
                     datasets: [{
                         label: 'Problemas',
-                        data: [45, 30, 25, 20, 15],
+                        data: catData,
                         backgroundColor: '#00d4ff',
                         borderRadius: 5
                     }]
@@ -174,5 +217,8 @@ Mostra estatísticas, cards de fabricantes e atividade.
             });
         }
     }
+
+    // Atualiza estatísticas a cada 30 segundos
+    setInterval(carregarEstatisticas, 30000);
 </script>
 {% endblock %}

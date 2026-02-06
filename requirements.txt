@@ -9,9 +9,9 @@
 # Escolhi Flask porque é simples de configurar e tem boa documentação
 flask>=3.0.0
 
-# Google Generative AI (Gemini) - Coração da IA do sistema
-# Essa lib permite conectar com o Gemini para análises inteligentes
-google-generativeai>=0.3.0
+# Google GenAI (Gemini) - Nova biblioteca oficial do Google
+# A antiga google-generativeai foi descontinuada
+google-genai>=1.0.0
 
 # Gerenciamento de variáveis de ambiente
 # Importante para não deixar a API key exposta no código
