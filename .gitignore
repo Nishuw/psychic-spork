@@ -2998,3 +2998,4 @@ venv/Scripts/pygmentize.exe
 venv/Scripts/python.exe
 venv/Scripts/pythonw.exe
 venv/Scripts/tqdm.exe
+data/estatisticas.json
