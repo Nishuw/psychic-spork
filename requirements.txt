@@ -1,0 +1,26 @@
+# ========================================
+# NetRouter AI - Dependências do Projeto
+# ========================================
+# Sistema de Troubleshooting Inteligente para Roteadores
+# Autor: Dev Pleno | Data: Fevereiro 2026
+# ========================================
+
+# Framework Web - Flask é leve e perfeito para dashboards
+# Escolhi Flask porque é simples de configurar e tem boa documentação
+flask>=3.0.0
+
+# Google Generative AI (Gemini) - Coração da IA do sistema
+# Essa lib permite conectar com o Gemini para análises inteligentes
+google-generativeai>=0.3.0
+
+# Gerenciamento de variáveis de ambiente
+# Importante para não deixar a API key exposta no código
+python-dotenv>=1.0.0
+
+# Framework de testes - Pytest é mais moderno que unittest
+# Facilita muito escrever testes legíveis
+pytest>=7.0.0
+
+# Requests - Para futuras integrações com APIs externas
+# Pode ser útil para buscar info de CVEs, documentação, etc
+requests>=2.31.0
