@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <!-- 
     ========================================
@@ -16,23 +17,26 @@
     -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ titulo }} | NetRouter AI</title>
-    
+    <title>{{ titulo }} | Psychic Spork</title>
+
     <!-- Google Fonts - Inter é moderna e legível -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
     <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <!-- Nosso CSS customizado -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
     <!-- Container principal com grid para sidebar -->
     <div class="app-container">
-        
+
         <!-- ========================================
              Sidebar de Navegação
              ======================================== -->
@@ -40,20 +44,22 @@
             <!-- Logo do sistema -->
             <div class="sidebar-logo">
                 <span class="logo-icon">🌐</span>
-                <span class="logo-text">NetRouter<span class="logo-ai">AI</span></span>
+                <span class="logo-text">Psychic<span class="logo-ai">Spork</span></span>
             </div>
-            
+
             <!-- Menu de navegação -->
             <nav class="sidebar-nav">
                 <a href="{{ url_for('main.index') }}" class="nav-item {% if titulo == 'Dashboard' %}active{% endif %}">
                     <span class="nav-icon">📊</span>
                     <span class="nav-text">Dashboard</span>
                 </a>
-                <a href="{{ url_for('main.troubleshoot') }}" class="nav-item {% if titulo == 'Troubleshooting' %}active{% endif %}">
+                <a href="{{ url_for('main.troubleshoot') }}"
+                    class="nav-item {% if titulo == 'Troubleshooting' %}active{% endif %}">
                     <span class="nav-icon">🔧</span>
                     <span class="nav-text">Troubleshoot</span>
                 </a>
-                <a href="{{ url_for('main.scripts') }}" class="nav-item {% if titulo == 'Gerador de Scripts' %}active{% endif %}">
+                <a href="{{ url_for('main.scripts') }}"
+                    class="nav-item {% if titulo == 'Gerador de Scripts' %}active{% endif %}">
                     <span class="nav-icon">📝</span>
                     <span class="nav-text">Scripts</span>
                 </a>
@@ -62,7 +68,7 @@
                     <span class="nav-text">Chat IA</span>
                 </a>
             </nav>
-            
+
             <!-- Info sobre fabricantes na sidebar -->
             <div class="sidebar-section">
                 <h4 class="section-title">Fabricantes</h4>
@@ -74,7 +80,7 @@
                 </div>
             </div>
         </aside>
-        
+
         <!-- ========================================
              Área Principal de Conteúdo
              ======================================== -->
@@ -89,7 +95,7 @@
                     </div>
                 </div>
             </header>
-            
+
             <!-- Conteúdo específico de cada página -->
             <div class="page-content">
                 {% block content %}
@@ -98,7 +104,7 @@
             </div>
         </main>
     </div>
-    
+
     <!-- ========================================
          Chat Flutuante com IA
          ======================================== -->
@@ -107,10 +113,10 @@
             <span class="chat-icon">🤖</span>
             <span class="chat-label">Pergunte à IA</span>
         </button>
-        
+
         <div class="chat-container" id="chatContainer">
             <div class="chat-header">
-                <span>💬 Assistente NetRouter</span>
+                <span>💬 Assistente Psychic</span>
                 <button class="chat-close" onclick="toggleChat()">✕</button>
             </div>
             <div class="chat-messages" id="chatMessages">
@@ -119,18 +125,19 @@
                 </div>
             </div>
             <div class="chat-input-container">
-                <input type="text" id="chatInput" placeholder="Digite sua dúvida..." 
-                       onkeypress="if(event.key==='Enter')enviarMensagem()">
+                <input type="text" id="chatInput" placeholder="Digite sua dúvida..."
+                    onkeypress="if(event.key==='Enter')enviarMensagem()">
                 <button onclick="enviarMensagem()" class="btn-send">Enviar</button>
             </div>
         </div>
     </div>
-    
+
     <!-- JavaScript do Dashboard -->
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-    
+
     <!-- Scripts específicos da página -->
     {% block scripts %}
     {% endblock %}
 </body>
+
 </html>
