@@ -62,8 +62,8 @@ class Config:
     GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', '')
     
     # Modelo do Gemini a ser usado
-    # O formato deve ser 'models/gemini-2.0-flash' para a nova API
-    GEMINI_MODEL = 'models/gemini-2.0-flash'
+    # Usando 1.5-flash para evitar quota exceeded do 2.0
+    GEMINI_MODEL = 'models/gemini-1.5-flash'
     
     # ========================================
     # Fabricantes e Versões Suportadas

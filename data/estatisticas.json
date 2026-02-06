@@ -1,0 +1,16 @@
+{
+  "historico": [
+    {
+      "timestamp": "2026-02-06T12:36:39.809885",
+      "problema": "bgp off line",
+      "fabricante": "nokia",
+      "versao": "sros-19",
+      "categoria": "conectividade",
+      "fonte": "",
+      "sucesso": false
+    }
+  ],
+  "scripts_gerados": 0,
+  "consultas_ia": 0,
+  "atualizado_em": "2026-02-06T12:36:40.088005"
+}

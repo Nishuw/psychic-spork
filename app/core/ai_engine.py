@@ -243,7 +243,15 @@ IMPORTANTE:
             }
             
         except Exception as e:
-            # Se der erro, retorna info útil para debug
+            # Tratamento especial para quota exceeded
+            erro_msg = str(e)
+            if "429" in erro_msg or "RESOURCE_EXHAUSTED" in erro_msg or "quota" in erro_msg.lower():
+                return {
+                    "sucesso": False,
+                    "analise": "",
+                    "erro": "⚠️ Limite de quota da API Gemini atingido. A base de conhecimento local ainda está disponível. Aguarde alguns minutos antes de usar a IA novamente."
+                }
+            # Outros erros
             return {
                 "sucesso": False,
                 "analise": "",
